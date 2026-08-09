@@ -1,0 +1,4 @@
+interface:
+  display_name: "Run Agent Evals"
+  short_description: "Run reproducible agent evaluations and inspect traces"
+  default_prompt: "Use $run-agent-evals to run the baseline evaluation and explain any failures."

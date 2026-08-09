@@ -1,0 +1,25 @@
+{
+  "name": "adaptive-agent-lab",
+  "version": "0.1.0",
+  "description": "Build, evaluate, and inspect a small adaptive agent runtime.",
+  "author": {
+    "name": "Xiang Wang"
+  },
+  "license": "MIT",
+  "keywords": ["agent", "evals", "observability", "mcp", "skills"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Adaptive Agent Lab",
+    "shortDescription": "Run reproducible agent evaluations and inspect traces.",
+    "longDescription": "A learning-oriented agent runtime with deterministic evaluations, SQLite trajectories, trace replay, and an MCP interface.",
+    "developerName": "Xiang Wang",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Run the baseline agent evaluation and explain the results.",
+      "List recent agent runs and inspect the latest failure.",
+      "Show me how the agent loop records a tool call."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}

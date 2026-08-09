@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adaptive-agent-lab"
+version = "0.1.0"
+description = "A small, observable agent runtime for learning and evaluation."
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Xiang Wang"}]
+dependencies = []
+
+[project.scripts]
+adaptive-agent-lab = "adaptive_agent_lab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
