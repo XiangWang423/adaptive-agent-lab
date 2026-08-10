@@ -4,7 +4,7 @@ from pathlib import Path
 
 from adaptive_agent_lab.core import AgentRunner
 from adaptive_agent_lab.models import BaselineModel
-from adaptive_agent_lab.tools import calculate, default_tools
+from adaptive_agent_lab.tools import calculate, default_tools, word_count
 from adaptive_agent_lab.trajectory import TrajectoryStore
 
 
@@ -21,6 +21,7 @@ class CoreTests(unittest.TestCase):
                 "What is 6 * 7?"
             )
 
+
             self.assertEqual(result.answer, "42")
             self.assertEqual(result.tool_calls, 1)
             trace = store.get_run(result.run_id)
@@ -30,6 +31,9 @@ class CoreTests(unittest.TestCase):
                 [step["kind"] for step in trace["steps"]],
                 ["model_action", "tool_result", "final"],
             )
+    def test_word_count_uses_whitespace_boundaries(self) -> None:
+        self.assertEqual(word_count("hello   world"), 2)
+        self.assertEqual(word_count(""), 0)
 
 
 if __name__ == "__main__":
