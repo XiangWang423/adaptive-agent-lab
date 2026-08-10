@@ -21,6 +21,11 @@ class BaselineModel:
             return FinalAnswer(str(latest.content["output"]))
 
         task = str(messages[0].content).lower()
+
+        if task.startswith("count the words in:"):
+            text = task.split(":", 1)[1].strip()
+            return Action("word_count", {"text": text})
+
         arithmetic = self._ARITHMETIC.search(task)
         if arithmetic:
             return Action("calculator", {"expression": arithmetic.group(1)})
