@@ -15,6 +15,22 @@ class Tool:
     handler: Callable[..., Any]
 
     def invoke(self, arguments: dict[str, Any]) -> Any:
+        required = self.parameters.get("required", [])
+        allowed = self.parameters.get("properties", {})
+
+        for name in required:
+            if name not in arguments:
+                raise ValueError(f"Missing required argument: {name}")
+
+        for name in arguments:
+            if name not in allowed:
+                raise ValueError(f"Unexpected argument: {name}")
+
+        for name, value in arguments.items():
+            parameter = allowed[name]
+            if parameter.get("type") == "string" and not isinstance(value, str):
+                raise ValueError(f"Argument {name} must be a string")
+
         return self.handler(**arguments)
 
 

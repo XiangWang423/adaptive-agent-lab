@@ -35,6 +35,20 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(word_count("hello   world"), 2)
         self.assertEqual(word_count(""), 0)
 
+    def test_tool_validates_arguments(self) -> None:
+        word_count_tool = next(
+            tool for tool in default_tools() if tool.name == "word_count"
+        )
+
+        with self.assertRaisesRegex(ValueError, "Missing required argument: text"):
+            word_count_tool.invoke({})
+
+        with self.assertRaisesRegex(ValueError, "Unexpected argument: typo"):
+            word_count_tool.invoke({"text": "hello", "typo": True})
+
+        with self.assertRaisesRegex(ValueError, "Argument text must be a string"):
+            word_count_tool.invoke({"text": 123})
+
 
 if __name__ == "__main__":
     unittest.main()
