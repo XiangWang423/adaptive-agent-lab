@@ -34,6 +34,11 @@ def calculate(expression: str) -> int | float:
     return _evaluate(ast.parse(expression, mode="eval").body)
 
 
+def word_count(text: str) -> int:
+    words = text.split()
+    return len(words)
+
+
 _KNOWLEDGE = {
     "capital:france": "Paris",
     "capital:japan": "Tokyo",
@@ -69,5 +74,15 @@ def default_tools() -> list[Tool]:
                 "required": ["key"],
             },
             handler=lookup,
+        ),
+        Tool(
+            name="word_count",
+            description="Count whitespace-separated words in text.",
+            parameters={
+                "type": "object",
+                "properties": {"text": {"type": "string"}},
+                "required": ["text"],
+            },
+            handler=word_count,
         ),
     ]

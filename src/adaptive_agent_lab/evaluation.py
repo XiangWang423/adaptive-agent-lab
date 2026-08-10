@@ -25,6 +25,11 @@ BASELINE_CASES = [
     EvalCase("capital-france", "What is the capital of France?", "Paris"),
     EvalCase("capital-japan", "What is the capital of Japan?", "Tokyo"),
     EvalCase("language-brazil", "What language is mainly spoken in Brazil?", "Portuguese"),
+    EvalCase(
+        "word-count",
+        "Count the words in: I love building agents",
+        "4",
+    ),
 ]
 
 
