@@ -1,5 +1,7 @@
 # Adaptive Agent Lab
 
+[![CI](https://github.com/XiangWang423/adaptive-agent-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/XiangWang423/adaptive-agent-lab/actions/workflows/ci.yml)
+
 Adaptive Agent Lab is a small, observable agent runtime built to answer a practical question:
 can an agent learn from failed trajectories without silently regressing on tasks it already solves?
 
