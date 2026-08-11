@@ -47,6 +47,27 @@ PYTHONPATH=src python3 -m unittest discover -s tests
 
 If `pytest` is installed, `pytest` also works.
 
+## Run with the OpenAI Responses API
+
+The real-model provider is optional, so the deterministic benchmark and CI do not require an API
+key or network access. Install the provider extra when you want to run a live task:
+
+```bash
+python3 -m pip install -e '.[openai]'
+export OPENAI_API_KEY="your-api-key"
+export OPENAI_MODEL="your-supported-model-id"
+adaptive-agent-lab run "Count the words in: reliable agents need good traces"
+```
+
+The provider sends the registered tools as function definitions, converts function calls into the
+runtime's `Action` objects, executes them through `AgentRunner`, and returns
+`function_call_output` with the matching `call_id`. It uses `previous_response_id` to continue the
+same Responses API interaction. Every action and tool result remains visible in the SQLite
+trajectory store.
+
+Never commit API keys. `.env` files are ignored by Git, and the CLI reads credentials from the
+process environment through the official OpenAI SDK.
+
 ## Why the baseline model is deterministic
 
 The first benchmark uses a rule-based model so runtime behavior can be tested without API cost,
@@ -55,7 +76,7 @@ orchestration and observability layers before a real LLM is introduced in Phase 
 
 ## Roadmap
 
-- Phase 2: OpenAI-compatible model provider and episodic/semantic memory.
+- Phase 2: OpenAI Responses API provider (implemented); episodic/semantic memory remains.
 - Phase 3: Generate versioned skills from failed trajectories.
 - Phase 4: Evaluation gate, canary release, and automatic rollback.
 - Phase 5: Dashboard, security policy, deployment, and portfolio demo.
