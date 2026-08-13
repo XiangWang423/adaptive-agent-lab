@@ -1,0 +1,12 @@
+{"id":"calculator-multiply","task":"Use exactly one available tool and return only its output. What is 17 * 6?","expected":"102","expected_tool":"calculator"}
+{"id":"calculator-add","task":"Use exactly one available tool and return only its output. Calculate 58 + 67.","expected":"125","expected_tool":"calculator"}
+{"id":"calculator-divide","task":"Use exactly one available tool and return only its output. What is 144 / 12?","expected":"12.0","expected_tool":"calculator"}
+{"id":"calculator-modulo","task":"Use exactly one available tool and return only its output. Calculate 29 % 6.","expected":"5","expected_tool":"calculator"}
+{"id":"calculator-negative","task":"Use exactly one available tool and return only its output. What is -8 * 7?","expected":"-56","expected_tool":"calculator"}
+{"id":"lookup-france","task":"Use exactly one available tool and return only its output. What is the capital of France? Use the key format category:entity.","expected":"Paris","expected_tool":"lookup"}
+{"id":"lookup-japan","task":"Use exactly one available tool and return only its output. What is the capital of Japan? Use the key format category:entity.","expected":"Tokyo","expected_tool":"lookup"}
+{"id":"lookup-brazil","task":"Use exactly one available tool and return only its output. What language is mainly spoken in Brazil? Use the key format category:entity.","expected":"Portuguese","expected_tool":"lookup"}
+{"id":"word-count-observability","task":"Use exactly one available tool and return only its output. Count the whitespace-separated words in: reliable agents need observable execution traces","expected":"6","expected_tool":"word_count"}
+{"id":"word-count-actions","task":"Use exactly one available tool and return only its output. Count the whitespace-separated words in: tools turn model decisions into real actions","expected":"7","expected_tool":"word_count"}
+{"id":"word-count-routing","task":"Use exactly one available tool and return only its output. Count the whitespace-separated words in: careful evaluation catches silent routing failures early","expected":"7","expected_tool":"word_count"}
+{"id":"word-count-systems","task":"Use exactly one available tool and return only its output. Count the whitespace-separated words in: small deterministic tests protect complex agent systems","expected":"7","expected_tool":"word_count"}

@@ -6,9 +6,9 @@ Adaptive Agent Lab is a small, observable agent runtime built to answer a practi
 can an agent learn from failed trajectories without silently regressing on tasks it already solves?
 
 Phase 1 establishes the measurable baseline: a framework-free agent loop, typed tools, SQLite
-trajectories, deterministic evaluations, trace inspection, and a Codex MCP/Skill interface. Later
-phases will add a real model provider, memory retrieval, versioned skill generation, evaluation
-gates, and automatic rollback.
+trajectories, deterministic and live-model evaluations, trace inspection, OpenAI/OpenRouter
+provider adapters, and a Codex MCP/Skill interface. Later phases will add memory retrieval,
+versioned skill generation, evaluation gates, and automatic rollback.
 
 ## Architecture
 
@@ -68,6 +68,60 @@ trajectory store.
 Never commit API keys. `.env` files are ignored by Git, and the CLI reads credentials from the
 process environment through the official OpenAI SDK.
 
+## Run with OpenRouter
+
+The OpenRouter adapter uses its OpenAI-compatible Chat Completions API while keeping orchestration
+inside `AgentRunner`. Unlike the OpenAI Responses adapter, it sends the complete user/action/tool
+history on every turn.
+
+```bash
+python3 -m pip install -e '.[openai]'
+read -s "OPENROUTER_API_KEY?Paste OpenRouter key: "
+export OPENROUTER_API_KEY
+echo
+
+PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
+  --db /tmp/openrouter-run.db \
+  run \
+  --provider openrouter \
+  --model openai/gpt-5-nano \
+  --max-steps 2 \
+  "Count the words in: I love building agents"
+```
+
+`--max-steps` is a cost and safety guard. It caps model decisions, including retries after tool
+errors.
+
+## Live evaluation
+
+JSONL cases score final-answer correctness separately from tool selection. Reports also include
+first-tool-call success, tool errors, recovery rate, average tool calls, and latency percentiles.
+The numeric scorer accepts one unambiguous number inside a short response without paying for a
+second model as a judge.
+
+```bash
+PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
+  --db /tmp/openrouter-smoke.db \
+  eval-live \
+  --provider openrouter \
+  --model openai/gpt-5-nano \
+  --cases evals/smoke_cases.jsonl \
+  --max-steps 2
+```
+
+### Evaluation-driven debugging example
+
+On 2026-08-13, a three-case OpenRouter smoke run selected the correct tool in all three cases but
+returned `capital:Tokyo` instead of the tool output `Tokyo` in one case. SQLite trajectory
+inspection then exposed a second inefficiency: the model tried `country:Japan` and `entity:Japan`
+before recovering with `capital:Japan`.
+
+The fix strengthened the provider system prompt, documented the lookup key contract in its JSON
+Schema, added first-attempt and recovery metrics, and introduced a two-step cost guard. A focused
+regression run improved that case from three tool calls, two tool errors, and 39.4 seconds to one
+tool call, zero tool errors, and 7.7 seconds. This is a single-case regression result, not a claim
+about the full benchmark.
+
 ## Why the baseline model is deterministic
 
 The first benchmark uses a rule-based model so runtime behavior can be tested without API cost,
@@ -76,7 +130,8 @@ orchestration and observability layers before a real LLM is introduced in Phase 
 
 ## Roadmap
 
-- Phase 2: OpenAI Responses API provider (implemented); episodic/semantic memory remains.
+- Phase 2: OpenAI Responses and OpenRouter providers plus live evaluation (implemented);
+  episodic/semantic memory remains.
 - Phase 3: Generate versioned skills from failed trajectories.
 - Phase 4: Evaluation gate, canary release, and automatic rollback.
 - Phase 5: Dashboard, security policy, deployment, and portfolio demo.

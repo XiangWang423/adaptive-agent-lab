@@ -1,0 +1,3 @@
+{"id":"calculator-multiply","task":"Use exactly one available tool and return only its output. What is 17 * 6?","expected":"102","expected_tool":"calculator"}
+{"id":"lookup-japan","task":"Use exactly one available tool and return only its output. What is the capital of Japan? Use the key format category:entity.","expected":"Tokyo","expected_tool":"lookup"}
+{"id":"word-count-observability","task":"Use exactly one available tool and return only its output. Count the whitespace-separated words in: reliable agents need observable execution traces","expected":"6","expected_tool":"word_count"}
