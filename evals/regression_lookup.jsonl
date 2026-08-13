@@ -1,0 +1,1 @@
+{"id":"lookup-japan-format-regression","task":"Use exactly one available tool and return only its output. What is the capital of Japan? Use the key format category:entity.","expected":"Tokyo","expected_tool":"lookup"}

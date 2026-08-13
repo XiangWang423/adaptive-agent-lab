@@ -49,6 +49,13 @@ class CoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Argument text must be a string"):
             word_count_tool.invoke({"text": 123})
 
+    def test_lookup_schema_explains_the_key_format(self) -> None:
+        lookup_tool = next(tool for tool in default_tools() if tool.name == "lookup")
+        description = lookup_tool.parameters["properties"]["key"]["description"]
+
+        self.assertIn("category:entity", description)
+        self.assertIn("capital:Japan", description)
+
 
 if __name__ == "__main__":
     unittest.main()

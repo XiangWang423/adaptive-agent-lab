@@ -70,7 +70,15 @@ def default_tools() -> list[Tool]:
             description="Look up a value in a small deterministic knowledge base.",
             parameters={
                 "type": "object",
-                "properties": {"key": {"type": "string"}},
+                "properties": {
+                    "key": {
+                        "type": "string",
+                        "description": (
+                            "Knowledge key in category:entity format. Supported keys: "
+                            "capital:France, capital:Japan, language:Brazil."
+                        ),
+                    }
+                },
                 "required": ["key"],
             },
             handler=lookup,
