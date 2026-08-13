@@ -11,6 +11,9 @@ license = {text = "MIT"}
 authors = [{name = "Xiang Wang"}]
 dependencies = []
 
+[project.optional-dependencies]
+openai = ["openai>=1.78.0"]
+
 [project.scripts]
 adaptive-agent-lab = "adaptive_agent_lab.cli:main"
 

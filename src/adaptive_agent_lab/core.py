@@ -38,6 +38,8 @@ class Tool:
 class Action:
     tool_name: str
     arguments: dict[str, Any]
+    call_id: str | None = None
+    response_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -112,7 +114,12 @@ class AgentRunner:
                     run_id,
                     step_index,
                     "model_action",
-                    {"tool_name": decision.tool_name, "arguments": decision.arguments},
+                    {
+                        "tool_name": decision.tool_name,
+                        "arguments": decision.arguments,
+                        "call_id": decision.call_id,
+                        "response_id": decision.response_id,
+                    },
                     duration_ms=decision_ms,
                 )
                 tool = self.tools.get(decision.tool_name)
@@ -132,6 +139,8 @@ class AgentRunner:
                     "tool_name": tool.name,
                     "output": output,
                     "error": tool_error,
+                    "call_id": decision.call_id,
+                    "response_id": decision.response_id,
                 }
                 self.store.append_step(
                     run_id,
