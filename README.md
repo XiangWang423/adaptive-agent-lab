@@ -5,11 +5,20 @@
 Adaptive Agent Lab is a small, observable agent runtime built to answer a practical question:
 can an agent learn from failed trajectories without silently regressing on tasks it already solves?
 
-Phase 1 establishes the measurable baseline: a framework-free agent loop, typed tools, SQLite
-trajectories, deterministic and live-model evaluations, trace inspection, OpenAI/OpenRouter
-provider adapters, and a Codex MCP/Skill interface. Phase 2 adds opt-in retrieval of similar
-recovered trajectories. Later phases will add versioned skill generation, evaluation gates, and
-automatic rollback.
+Version 0.1 provides a framework-free agent loop, typed tools, SQLite trajectories, deterministic
+and live-model evaluations, trace inspection, OpenAI/OpenRouter provider adapters, and opt-in
+retrieval of similar recovered trajectories. It is a portfolio-scale runtime and experiment bed,
+not a claim of production readiness or autonomous learning.
+
+## What this project demonstrates
+
+- **Orchestration:** the model proposes actions, while `AgentRunner` validates and executes tools.
+- **Recovery:** tool errors become observations that the model can use on a later step.
+- **Observability:** actions, tool outputs, errors, timings, and final status are stored in SQLite.
+- **Evaluation:** answer quality, tool choice, first-call success, recovery, and latency are scored
+  separately.
+- **Memory safety:** historical trajectories and held-out evaluation results use isolated databases.
+- **Engineering workflow:** regression tests run on Python 3.9, 3.11, and 3.13 in GitHub Actions.
 
 ## Architecture
 
@@ -111,8 +120,8 @@ PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
 ```
 
 Memory is opt-in and is not enabled inside evaluation by default. This avoids contaminating a test
-set with earlier answers from the same benchmark database; a future phase will add explicit
-train/evaluation memory splits and A/B metrics.
+set with earlier answers from the same benchmark database. Isolated memory databases provide an
+explicit history/evaluation split for A/B experiments.
 
 ## Live evaluation
 
@@ -193,11 +202,16 @@ orchestration and observability layers before a real LLM is introduced in Phase 
 
 ## Roadmap
 
-- Phase 2: OpenAI Responses and OpenRouter providers, live evaluation, and first episodic
-  trajectory retrieval (implemented); semantic retrieval and isolated memory evaluation remain.
-- Phase 3: Generate versioned skills from failed trajectories.
-- Phase 4: Evaluation gate, canary release, and automatic rollback.
-- Phase 5: Dashboard, security policy, deployment, and portfolio demo.
+Version 0.1 is feature-complete for its educational scope. Possible future experiments include
+semantic retrieval, versioned skill generation, evaluation-gated rollout, and stale-run cleanup.
+These are deliberately left outside the current release until larger held-out evaluations justify
+the added complexity.
+
+## Documentation
+
+- [Memory A/B experiment](docs/experiments/memory-ab-2026-08-15.md)
+- [Chinese interview guide](docs/interview-guide.zh-CN.md)
+- [Version 0.1 release notes](docs/releases/v0.1.0.md)
 
 Inspired by the learning-loop ideas in Nous Research's Hermes Agent. This project is an independent
 educational implementation and does not copy Hermes source code.
