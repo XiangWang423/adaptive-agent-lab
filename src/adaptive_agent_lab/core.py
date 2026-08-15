@@ -184,6 +184,10 @@ class AgentRunner:
             error = f"Maximum step count ({self.max_steps}) reached"
             self.store.finish_run(run_id, "failed", error=error)
             return AgentResult(run_id, "failed", None, self.max_steps, tool_calls, error)
+        except (KeyboardInterrupt, SystemExit) as exc:
+            error = f"{type(exc).__name__}: {exc}"
+            self.store.finish_run(run_id, "interrupted", error=error)
+            raise
         except Exception as exc:
             error = f"{type(exc).__name__}: {exc}"
             self.store.finish_run(run_id, "failed", error=error)

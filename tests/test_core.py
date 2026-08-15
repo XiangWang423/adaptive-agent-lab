@@ -8,6 +8,11 @@ from adaptive_agent_lab.tools import calculate, default_tools, word_count
 from adaptive_agent_lab.trajectory import TrajectoryStore
 
 
+class InterruptedModel:
+    def decide(self, messages, tools):
+        raise KeyboardInterrupt("cancelled by user")
+
+
 class CoreTests(unittest.TestCase):
     def test_calculator_accepts_arithmetic_and_rejects_code(self) -> None:
         self.assertEqual(calculate("2 + 3 * 4"), 14)
@@ -55,6 +60,19 @@ class CoreTests(unittest.TestCase):
 
         self.assertIn("category:entity", description)
         self.assertIn("capital:Japan", description)
+
+    def test_agent_records_an_interrupted_run_before_reraising(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = TrajectoryStore(Path(directory) / "runs.db")
+            runner = AgentRunner(InterruptedModel(), default_tools(), store)
+
+            with self.assertRaisesRegex(KeyboardInterrupt, "cancelled by user"):
+                runner.run("A task interrupted with Ctrl-C")
+
+            runs = store.list_runs()
+            self.assertEqual(len(runs), 1)
+            self.assertEqual(runs[0]["status"], "interrupted")
+            self.assertIn("KeyboardInterrupt", runs[0]["error"])
 
 
 if __name__ == "__main__":
