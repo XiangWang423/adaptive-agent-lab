@@ -73,6 +73,26 @@ class OpenRouterChatModelTests(unittest.TestCase):
         self.assertIn("word_count", tool_names)
         self.assertFalse(request["parallel_tool_calls"])
 
+    def test_sends_recalled_memory_as_system_context(self) -> None:
+        client = FakeClient(text_response("done"))
+        model = OpenRouterChatModel(client, model="test-model")
+
+        model.decide(
+            [
+                Message("memory", "A similar call used the text argument."),
+                Message("user", "Count words"),
+            ],
+            default_tools(),
+        )
+
+        messages = client.chat.completions.requests[0]["messages"]
+        self.assertEqual([message["role"] for message in messages[:3]], [
+            "system",
+            "system",
+            "user",
+        ])
+        self.assertIn("similar call", messages[1]["content"])
+
     def test_sends_complete_history_after_tool_result(self) -> None:
         client = FakeClient(
             tool_response("word_count", '{"text": "hello world"}', "call_123"),

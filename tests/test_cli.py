@@ -19,6 +19,7 @@ class CliTests(unittest.TestCase):
                 "openrouter",
                 "--max-steps",
                 "2",
+                "--memory",
             ]
         )
 
@@ -27,6 +28,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(args.model, "test-model")
         self.assertEqual(args.provider, "openrouter")
         self.assertEqual(args.max_steps, 2)
+        self.assertTrue(args.memory)
 
     def test_run_command_requires_model(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

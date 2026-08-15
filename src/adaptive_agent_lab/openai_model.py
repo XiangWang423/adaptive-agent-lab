@@ -7,6 +7,12 @@ from typing import Any, Sequence, Union
 from .core import Action, FinalAnswer, Message, Tool
 
 
+SYSTEM_PROMPT = (
+    "Use the available tools when they can answer the user's request. "
+    "If a tool reports an error, inspect it and retry with corrected arguments."
+)
+
+
 class OpenAIResponsesModel:
     def __init__(self, client: Any, model: str) -> None:
         self.client = client
@@ -78,6 +84,16 @@ class OpenAIResponsesModel:
             "model": self.model,
             "input": input_items,
             "tools": tool_definitions,
+            "instructions": "\n\n".join(
+                [
+                    SYSTEM_PROMPT,
+                    *(
+                        str(message.content)
+                        for message in messages
+                        if message.role == "memory"
+                    ),
+                ]
+            ),
         }
         if previous_response_id is not None:
             request["previous_response_id"] = previous_response_id
