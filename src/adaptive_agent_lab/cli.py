@@ -9,6 +9,7 @@ from typing import Sequence
 
 from .core import AgentRunner
 from .evaluation import load_eval_cases, run_baseline, run_evaluation
+from .memory import TrajectoryMemory
 from .openai_model import OpenAIResponsesModel
 from .openrouter_model import OpenRouterChatModel
 from .tools import default_tools
@@ -57,6 +58,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=os.environ.get("AGENT_PROVIDER", "openai"),
     )
     run.add_argument("--max-steps", type=int, default=8)
+    run.add_argument(
+        "--memory",
+        action="store_true",
+        help="Recall similar recovered trajectories before the model decides.",
+    )
     runs = subparsers.add_parser("runs", help="List recent agent runs.")
     runs.add_argument("--limit", type=int, default=10)
     show = subparsers.add_parser("show", help="Show one execution trajectory.")
@@ -90,7 +96,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         except RuntimeError as exc:
             raise SystemExit(str(exc)) from exc
         result = AgentRunner(
-            model, default_tools(), store, max_steps=args.max_steps
+            model,
+            default_tools(),
+            store,
+            max_steps=args.max_steps,
+            memory=TrajectoryMemory(store) if args.memory else None,
         ).run(args.task)
         _print(asdict(result))
         return 0 if result.status == "completed" else 1

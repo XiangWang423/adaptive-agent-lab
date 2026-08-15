@@ -75,6 +75,29 @@ class OpenAIResponsesModelTests(unittest.TestCase):
         tool_names = {tool["name"] for tool in request["tools"]}
         self.assertIn("word_count", tool_names)
 
+    def test_adds_recalled_memory_to_instructions(self) -> None:
+        response = SimpleNamespace(
+            id="resp_123",
+            output=[],
+            output_text="done",
+        )
+        client = FakeClient(response)
+        model = OpenAIResponsesModel(client, model="test-model")
+
+        model.decide(
+            [
+                Message("memory", "A similar call used the text argument."),
+                Message("user", "Count words"),
+            ],
+            default_tools(),
+        )
+
+        request = client.responses.requests[0]
+        self.assertIn("similar call", request["instructions"])
+        self.assertEqual(request["input"], [
+            {"role": "user", "content": "Count words"}
+        ])
+
     def test_completes_tool_call_round_trip(self) -> None:
         function_call = SimpleNamespace(
             id="resp_123",

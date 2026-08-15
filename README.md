@@ -7,8 +7,9 @@ can an agent learn from failed trajectories without silently regressing on tasks
 
 Phase 1 establishes the measurable baseline: a framework-free agent loop, typed tools, SQLite
 trajectories, deterministic and live-model evaluations, trace inspection, OpenAI/OpenRouter
-provider adapters, and a Codex MCP/Skill interface. Later phases will add memory retrieval,
-versioned skill generation, evaluation gates, and automatic rollback.
+provider adapters, and a Codex MCP/Skill interface. Phase 2 adds opt-in retrieval of similar
+recovered trajectories. Later phases will add versioned skill generation, evaluation gates, and
+automatic rollback.
 
 ## Architecture
 
@@ -16,8 +17,8 @@ versioned skill generation, evaluation gates, and automatic rollback.
 Task -> AgentRunner -> Model decision -> Tool -> Observation -> Final answer
              |                         |                    |
              +---------- SQLite trajectory store ----------+
-                                      |
-                            Eval runner / MCP tools
+              |                       |
+              +-- trajectory memory <-+-- Eval runner / MCP tools
 ```
 
 `AgentRunner` is intentionally a small state machine rather than a wrapper around an agent
@@ -92,6 +93,27 @@ PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
 `--max-steps` is a cost and safety guard. It caps model decisions, including retries after tool
 errors.
 
+## Recall recovered trajectories
+
+Add `--memory` to a live `run` command to retrieve similar completed runs that first encountered a
+tool error and later recovered. Retrieval uses local token overlap, so it does not make another API
+request. The model receives a compact failed-call/successful-call example before its first decision,
+and the recall is recorded as a `memory_recall` trajectory event.
+
+```bash
+PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
+  --db .adaptive-agent-lab/trajectories.db \
+  run \
+  --provider openrouter \
+  --model openai/gpt-5-nano \
+  --memory \
+  "Count words after correcting invalid arguments"
+```
+
+Memory is opt-in and is not enabled inside evaluation by default. This avoids contaminating a test
+set with earlier answers from the same benchmark database; a future phase will add explicit
+train/evaluation memory splits and A/B metrics.
+
 ## Live evaluation
 
 JSONL cases score final-answer correctness separately from tool selection. Reports also include
@@ -130,8 +152,8 @@ orchestration and observability layers before a real LLM is introduced in Phase 
 
 ## Roadmap
 
-- Phase 2: OpenAI Responses and OpenRouter providers plus live evaluation (implemented);
-  episodic/semantic memory remains.
+- Phase 2: OpenAI Responses and OpenRouter providers, live evaluation, and first episodic
+  trajectory retrieval (implemented); semantic retrieval and isolated memory evaluation remain.
 - Phase 3: Generate versioned skills from failed trajectories.
 - Phase 4: Evaluation gate, canary release, and automatic rollback.
 - Phase 5: Dashboard, security policy, deployment, and portfolio demo.

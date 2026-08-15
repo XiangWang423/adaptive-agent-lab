@@ -85,6 +85,9 @@ class OpenRouterChatModel:
 
     @staticmethod
     def _convert_message(message: Message) -> dict[str, Any]:
+        if message.role == "memory":
+            return {"role": "system", "content": str(message.content)}
+
         if message.role == "user":
             return {"role": "user", "content": str(message.content)}
 

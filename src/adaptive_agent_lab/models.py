@@ -20,7 +20,11 @@ class BaselineModel:
                 return FinalAnswer(f"Tool failed: {latest.content['error']}")
             return FinalAnswer(str(latest.content["output"]))
 
-        task = str(messages[0].content).lower()
+        task = next(
+            str(message.content).lower()
+            for message in messages
+            if message.role == "user"
+        )
 
         if task.startswith("count the words in:"):
             text = task.split(":", 1)[1].strip()
