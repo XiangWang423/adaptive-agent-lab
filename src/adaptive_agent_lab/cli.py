@@ -49,6 +49,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--cases", type=Path, default=Path("evals/live_cases.jsonl")
     )
     live_eval.add_argument("--max-steps", type=int, default=8)
+    live_eval.add_argument(
+        "--memory-db",
+        type=Path,
+        help="Read recovered trajectories from a database separate from --db.",
+    )
     run = subparsers.add_parser("run", help="Run one task with a live model provider.")
     run.add_argument("task")
     run.add_argument("--model", default=default_model)
@@ -84,7 +89,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         except RuntimeError as exc:
             raise SystemExit(str(exc)) from exc
         cases = load_eval_cases(args.cases)
-        _print(run_evaluation(model, cases, args.db, max_steps=args.max_steps))
+        try:
+            report = run_evaluation(
+                model,
+                cases,
+                args.db,
+                max_steps=args.max_steps,
+                memory_db_path=args.memory_db,
+            )
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        _print(report)
         return 0
 
     store = TrajectoryStore(args.db)
