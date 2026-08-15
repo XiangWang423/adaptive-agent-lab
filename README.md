@@ -168,6 +168,10 @@ per-case recalled-memory count alongside correctness, first-call success, tool e
 and latency. Run control and treatment against the same held-out cases, but never use trajectories
 from those held-out cases as memory.
 
+See the [first live memory A/B experiment](docs/experiments/memory-ab-2026-08-15.md) for a
+single-case functional validation, its ceiling effect, and the resulting interruption-handling
+fix. The report deliberately separates observed measurements from unsupported performance claims.
+
 ### Evaluation-driven debugging example
 
 On 2026-08-13, a three-case OpenRouter smoke run selected the correct tool in all three cases but
