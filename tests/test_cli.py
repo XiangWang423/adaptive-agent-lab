@@ -51,6 +51,8 @@ class CliTests(unittest.TestCase):
                 "cases.jsonl",
                 "--max-steps",
                 "3",
+                "--memory-db",
+                "memory.db",
             ]
         )
 
@@ -59,6 +61,7 @@ class CliTests(unittest.TestCase):
         self.assertEqual(args.provider, "openrouter")
         self.assertEqual(args.cases, Path("cases.jsonl"))
         self.assertEqual(args.max_steps, 3)
+        self.assertEqual(args.memory_db, Path("memory.db"))
 
     def test_live_eval_requires_model(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

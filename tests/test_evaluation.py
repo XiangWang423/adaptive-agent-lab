@@ -11,6 +11,7 @@ from adaptive_agent_lab.evaluation import (
     run_evaluation,
     _score_answer,
 )
+from adaptive_agent_lab.trajectory import TrajectoryStore
 
 
 class ScriptedModel:
@@ -19,6 +20,51 @@ class ScriptedModel:
 
     def decide(self, messages, tools):
         return self.decisions.pop(0)
+
+
+class MemorySensitiveModel:
+    def decide(self, messages, tools):
+        latest = messages[-1]
+        if latest.role == "user":
+            if any(message.role == "memory" for message in messages):
+                return Action("word_count", {"text": "hello world"})
+            return Action("word_count", {"text": 123})
+        if latest.role == "tool" and latest.content["error"]:
+            return Action("word_count", {"text": "hello world"})
+        return FinalAnswer(str(latest.content["output"]))
+
+
+def seed_recovered_trajectory(store: TrajectoryStore) -> None:
+    run_id = store.start_run("Count words after correcting invalid arguments")
+    store.append_step(
+        run_id,
+        0,
+        "model_action",
+        {"tool_name": "word_count", "arguments": {"text": 123}},
+    )
+    store.append_step(
+        run_id,
+        0,
+        "tool_result",
+        {
+            "tool_name": "word_count",
+            "output": None,
+            "error": "ValueError: Argument text must be a string",
+        },
+    )
+    store.append_step(
+        run_id,
+        1,
+        "model_action",
+        {"tool_name": "word_count", "arguments": {"text": "hello world"}},
+    )
+    store.append_step(
+        run_id,
+        1,
+        "tool_result",
+        {"tool_name": "word_count", "output": 2, "error": None},
+    )
+    store.finish_run(run_id, "completed", "2")
 
 
 class EvaluationTests(unittest.TestCase):
@@ -104,6 +150,63 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(report["summary"]["first_tool_call_success_rate"], 0.0)
         self.assertEqual(report["summary"]["total_tool_errors"], 1)
         self.assertEqual(report["summary"]["recovery_rate"], 1.0)
+
+    def test_uses_an_isolated_memory_database_and_reports_recall(self) -> None:
+        cases = [
+            EvalCase(
+                "memory-word-count",
+                "Count words after correcting bad arguments",
+                "2",
+                "word_count",
+            )
+        ]
+
+        with tempfile.TemporaryDirectory() as directory:
+            memory_db = Path(directory) / "memory.db"
+            result_db = Path(directory) / "results.db"
+            seed_recovered_trajectory(TrajectoryStore(memory_db))
+
+            report = run_evaluation(
+                MemorySensitiveModel(),
+                cases,
+                result_db,
+                memory_db_path=memory_db,
+            )
+
+        result = report["results"][0]
+        self.assertTrue(result["memory_recalled"])
+        self.assertEqual(result["recalled_memories"], 1)
+        self.assertEqual(result["tool_calls"], 1)
+        self.assertTrue(report["summary"]["memory_enabled"])
+        self.assertEqual(report["summary"]["memory_recall_rate"], 1.0)
+
+    def test_rejects_using_the_result_database_as_memory(self) -> None:
+        cases = [EvalCase("one", "Count words", "2", "word_count")]
+
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "shared.db"
+            with self.assertRaisesRegex(
+                ValueError,
+                "Memory and evaluation databases must be different",
+            ):
+                run_evaluation(
+                    MemorySensitiveModel(),
+                    cases,
+                    path,
+                    memory_db_path=path,
+                )
+
+    def test_rejects_a_missing_memory_database(self) -> None:
+        cases = [EvalCase("one", "Count words", "2", "word_count")]
+
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "Memory database does not exist"):
+                run_evaluation(
+                    MemorySensitiveModel(),
+                    cases,
+                    Path(directory) / "results.db",
+                    memory_db_path=Path(directory) / "missing.db",
+                )
 
     def test_loads_jsonl_cases_and_rejects_duplicate_ids(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

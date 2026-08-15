@@ -131,6 +131,43 @@ PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
   --max-steps 2
 ```
 
+### Isolated memory evaluation
+
+Live evaluation can read recovered trajectories from a separate historical database. The memory
+database must already exist and cannot be the same file as the evaluation result database. This
+prevents the current test runs from becoming their own memory and contaminating the benchmark.
+
+Run the control group without memory:
+
+```bash
+PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
+  --db /tmp/memory-ab-control.db \
+  eval-live \
+  --provider openrouter \
+  --model openai/gpt-5-nano \
+  --cases evals/smoke_cases.jsonl \
+  --max-steps 2 > /tmp/memory-ab-control.json
+```
+
+Run the treatment group against a database of earlier, recovered trajectories:
+
+```bash
+PYTHONPATH=src python3 -m adaptive_agent_lab.cli \
+  --db /tmp/memory-ab-treatment.db \
+  eval-live \
+  --provider openrouter \
+  --model openai/gpt-5-nano \
+  --cases evals/smoke_cases.jsonl \
+  --max-steps 2 \
+  --memory-db .adaptive-agent-lab/trajectories.db \
+  > /tmp/memory-ab-treatment.json
+```
+
+The report includes `memory_enabled`, `cases_with_memory_recall`, `memory_recall_rate`, and a
+per-case recalled-memory count alongside correctness, first-call success, tool errors, tool calls,
+and latency. Run control and treatment against the same held-out cases, but never use trajectories
+from those held-out cases as memory.
+
 ### Evaluation-driven debugging example
 
 On 2026-08-13, a three-case OpenRouter smoke run selected the correct tool in all three cases but

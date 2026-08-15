@@ -11,6 +11,7 @@ from time import perf_counter
 from typing import Any, Sequence
 
 from .core import AgentRunner, ChatModel
+from .memory import TrajectoryMemory
 from .models import BaselineModel
 from .tools import default_tools
 from .trajectory import TrajectoryStore
@@ -71,6 +72,8 @@ def _trajectory_metrics(store: TrajectoryStore, run_id: str) -> dict[str, Any]:
             "selected_tools": [],
             "tool_errors": 0,
             "first_tool_call_succeeded": None,
+            "memory_recalled": False,
+            "recalled_memories": 0,
         }
     selected_tools = [
         step["payload"]["tool_name"]
@@ -82,11 +85,20 @@ def _trajectory_metrics(store: TrajectoryStore, run_id: str) -> dict[str, Any]:
         for step in trace["steps"]
         if step["kind"] == "tool_result"
     ]
+    memory_steps = [
+        step["payload"]
+        for step in trace["steps"]
+        if step["kind"] == "memory_recall"
+    ]
     return {
         "selected_tools": selected_tools,
         "tool_errors": sum(result.get("error") is not None for result in tool_results),
         "first_tool_call_succeeded": (
             None if not tool_results else tool_results[0].get("error") is None
+        ),
+        "memory_recalled": bool(memory_steps),
+        "recalled_memories": sum(
+            memory_step.get("count", 0) for memory_step in memory_steps
         ),
     }
 
@@ -121,12 +133,35 @@ def run_evaluation(
     cases: Sequence[EvalCase],
     db_path: str | Path,
     max_steps: int = 8,
+    memory_db_path: str | Path | None = None,
 ) -> dict[str, Any]:
     if not cases:
         raise ValueError("Evaluation requires at least one case")
 
-    store = TrajectoryStore(db_path)
-    runner = AgentRunner(model, default_tools(), store, max_steps=max_steps)
+    result_path = Path(db_path).expanduser().resolve()
+    memory_path = (
+        None
+        if memory_db_path is None
+        else Path(memory_db_path).expanduser().resolve()
+    )
+    if memory_path == result_path:
+        raise ValueError("Memory and evaluation databases must be different")
+    if memory_path is not None and not memory_path.is_file():
+        raise ValueError(f"Memory database does not exist: {memory_path}")
+
+    store = TrajectoryStore(result_path)
+    memory = (
+        None
+        if memory_path is None
+        else TrajectoryMemory(TrajectoryStore(memory_path))
+    )
+    runner = AgentRunner(
+        model,
+        default_tools(),
+        store,
+        max_steps=max_steps,
+        memory=memory,
+    )
     results: list[dict[str, Any]] = []
 
     for case in cases:
@@ -164,6 +199,8 @@ def run_evaluation(
                 ],
                 "tool_errors": tool_errors,
                 "recovered_after_tool_error": recovered_after_tool_error,
+                "memory_recalled": trajectory["memory_recalled"],
+                "recalled_memories": trajectory["recalled_memories"],
                 "status": agent_result.status,
                 "steps": agent_result.steps,
                 "tool_calls": agent_result.tool_calls,
@@ -187,6 +224,7 @@ def run_evaluation(
     first_attempt_successes = sum(first_attempt_results)
     cases_with_tool_errors = sum(result["tool_errors"] > 0 for result in results)
     recovered_cases = sum(result["recovered_after_tool_error"] for result in results)
+    cases_with_memory = sum(result["memory_recalled"] for result in results)
     latencies = sorted(result["latency_ms"] for result in results)
     p95_index = ceil(0.95 * len(latencies)) - 1
     return {
@@ -211,6 +249,11 @@ def run_evaluation(
                 recovered_cases / cases_with_tool_errors
                 if cases_with_tool_errors
                 else None
+            ),
+            "memory_enabled": memory_path is not None,
+            "cases_with_memory_recall": cases_with_memory,
+            "memory_recall_rate": (
+                cases_with_memory / len(results) if memory_path is not None else None
             ),
             "average_steps": round(mean(result["steps"] for result in results), 3),
             "average_tool_calls": round(mean(result["tool_calls"] for result in results), 3),
