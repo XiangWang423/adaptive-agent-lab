@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 
 def _now() -> str:
@@ -23,8 +24,17 @@ class TrajectoryStore:
         connection.row_factory = sqlite3.Row
         return connection
 
+    @contextmanager
+    def _connection(self) -> Iterator[sqlite3.Connection]:
+        connection = self._connect()
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
+
     def _initialize(self) -> None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             connection.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS runs (
@@ -51,7 +61,7 @@ class TrajectoryStore:
 
     def start_run(self, task: str) -> str:
         run_id = uuid.uuid4().hex
-        with self._connect() as connection:
+        with self._connection() as connection:
             connection.execute(
                 "INSERT INTO runs (id, task, status, started_at) VALUES (?, ?, ?, ?)",
                 (run_id, task, "running", _now()),
@@ -66,7 +76,7 @@ class TrajectoryStore:
         payload: dict[str, Any],
         duration_ms: float = 0.0,
     ) -> None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             connection.execute(
                 """INSERT INTO steps
                    (run_id, step_index, kind, payload, duration_ms, created_at)
@@ -81,7 +91,7 @@ class TrajectoryStore:
         answer: str | None = None,
         error: str | None = None,
     ) -> None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             connection.execute(
                 """UPDATE runs
                    SET status = ?, answer = ?, error = ?, finished_at = ?
@@ -90,7 +100,7 @@ class TrajectoryStore:
             )
 
     def list_runs(self, limit: int = 20) -> list[dict[str, Any]]:
-        with self._connect() as connection:
+        with self._connection() as connection:
             rows = connection.execute(
                 """SELECT r.*,
                           COUNT(s.id) AS event_count,
@@ -102,7 +112,7 @@ class TrajectoryStore:
         return [dict(row) for row in rows]
 
     def get_run(self, run_id: str) -> dict[str, Any] | None:
-        with self._connect() as connection:
+        with self._connection() as connection:
             run = connection.execute("SELECT * FROM runs WHERE id = ?", (run_id,)).fetchone()
             if run is None:
                 return None
